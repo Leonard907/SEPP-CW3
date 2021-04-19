@@ -4,6 +4,7 @@
 
 package shield;
 
+import com.google.gson.Gson;
 import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -20,40 +21,44 @@ import java.util.Random;
  */
 
 public class ShieldingIndividualClientImpTest {
-  private final static String clientPropsFilename = "client.cfg";
+    private final static String clientPropsFilename = "client.cfg";
 
-  private Properties clientProps;
-  private ShieldingIndividualClient client;
+    private Properties clientProps;
+    private ShieldingIndividualClient client;
 
-  private Properties loadProperties(String propsFilename) {
-    ClassLoader loader = Thread.currentThread().getContextClassLoader();
-    Properties props = new Properties();
+    private Properties loadProperties(String propsFilename) {
+        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        Properties props = new Properties();
 
-    try {
-      InputStream propsStream = loader.getResourceAsStream(propsFilename);
-      props.load(propsStream);
-    } catch (Exception e) {
-      e.printStackTrace();
+        try {
+            InputStream propsStream = loader.getResourceAsStream(propsFilename);
+            props.load(propsStream);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return props;
     }
 
-    return props;
-  }
-
-  @BeforeEach
-  public void setup() {
-    clientProps = loadProperties(clientPropsFilename);
-
-    client = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
-  }
+    @BeforeEach
+    public void setup() {
+        clientProps = loadProperties(clientPropsFilename);
+        client = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
+    }
 
 
-  @Test
-  public void testShieldingIndividualNewRegistration() {
-    Random rand = new Random();
-    String chi = String.valueOf(rand.nextInt(10000));
+    @Test
+    public void testShieldingIndividualNewRegistration() {
+        Random rand = new Random();
+        String chi = String.valueOf("2908031086");
 
-    assertTrue(client.registerShieldingIndividual(chi));
-    assertTrue(client.isRegistered());
-    assertEquals(client.getCHI(), chi);
-  }
+        assertTrue(client.registerShieldingIndividual(chi));
+        assertTrue(client.isRegistered());
+        assertEquals(client.getCHI(), chi);
+    }
+
+    @Test
+    public void testShowFoodBoxes() {
+        System.out.println(Boolean.parseBoolean("True"));
+    }
 }

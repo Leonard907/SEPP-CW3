@@ -5,31 +5,54 @@
 package shield;
 
 public class CateringCompanyClientImp implements CateringCompanyClient {
-  public CateringCompanyClientImp(String endpoint) {
-  }
+    private String endpoint;
+    private String postcode;
+    private String name;
+    private boolean registered;
 
-  @Override
-  public boolean registerCateringCompany(String name, String postCode) {
+    public CateringCompanyClientImp(String endpoint) {
+        this.endpoint = endpoint;
+        this.registered = false;
+    }
+
+    @Override
+    public boolean registerCateringCompany(String name, String postCode) {
+        String request = String.format("/registerCateringCompany?business_name=%s&postcode=%s", name, postCode);
+
+        try {
+            String response = ClientIO.doGETRequest(endpoint + request);
+            if (response.equals(Utilities.NEW_REGISTER_MESSAGE)) {
+                this.name = name;
+                this.postcode = postCode;
+                this.registered = true;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public boolean updateOrderStatus(int orderNumber, String status) {
     return false;
-  }
+    }
 
-  @Override
-  public boolean updateOrderStatus(int orderNumber, String status) {
-    return false;
-  }
+    @Override
+    public boolean isRegistered() {
+        return this.registered;
+    }
 
-  @Override
-  public boolean isRegistered() {
-    return false;
-  }
+    @Override
+    public String getName() {
+        return this.name;
+    }
 
-  @Override
-  public String getName() {
-    return null;
-  }
+    @Override
+    public String getPostCode() {
+        return this.postcode;
+    }
 
-  @Override
-  public String getPostCode() {
-    return null;
-  }
+    private boolean validPostcode(String postcode) {
+        return false;
+    }
 }

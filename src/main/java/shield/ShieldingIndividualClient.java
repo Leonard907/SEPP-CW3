@@ -9,7 +9,7 @@ package shield;
 
 import java.util.Collection;
 
-public interface ShieldingIndividualClient extends ShieldingIndividualClientEndpoints {
+public interface  ShieldingIndividualClient extends ShieldingIndividualClientEndpoints {
   /**
   * Returns if the individual using the client is registered with the server
   *
