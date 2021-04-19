@@ -44,7 +44,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
 
         try {
             String response = ClientIO.doGETRequest(endpoint + request);
-            if (!response.equals(Utilities.REGISTERED_MESSAGE)) {
+            if (!response.equals("already registered")) {
                 this.registered = true;
                 this.CHI = CHI;
                 String[] personalInfo = new Gson().fromJson(response, String[].class);
@@ -96,7 +96,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
             String data = new Gson().toJson(pickedFoodBox);
             String response = ClientIO.doPOSTRequest(endpoint + request, data);
             this.currentOrderId = Integer.parseInt(response);
-            Order newOrder = new Order(currentOrderId, Utilities.ORDER_PLACED, pickedFoodBox);
+            Order newOrder = new Order(currentOrderId, 0, pickedFoodBox);
             this.allOrders.add(newOrder);
             this.idToOrder.put(currentOrderId, newOrder);
             this.orderedThisWeek = true;
@@ -382,7 +382,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
         try {
             // get info from CHI
             int year = Integer.parseInt(CHI.substring(4,6));
-            if (year <= Utilities.YEAR_NOW) {
+            if (year <= 21) {
                 year += 2000;
             } else {
                 year += 1900;
