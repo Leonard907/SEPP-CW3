@@ -36,13 +36,29 @@ public class SupermarketClientImp implements SupermarketClient {
     // **UPDATE2** ADDED METHOD
     @Override
     public boolean recordSupermarketOrder(String CHI, int orderNumber) {
-    return false;
+        String request = String.format(
+                "/recordSupermarketOrder?individual_id=%s" +
+                        "&order_number=%s&supermarket_business_name=%s" +
+                        "&supermarket_postcode=%s", CHI, orderNumber, name, postcode);
+        try {
+            String response = ClientIO.doGETRequest(endpoint + request);
+            return Boolean.parseBoolean(response);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     // **UPDATE**
     @Override
     public boolean updateOrderStatus(int orderNumber, String status) {
-    return false;
+        String request = String.format("/updateSupermarketOrderStatus?order_id=%s&newStatus=%s",
+                orderNumber, status);
+        try {
+            String response = ClientIO.doGETRequest(endpoint + request);
+            return Boolean.parseBoolean(response);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     @Override

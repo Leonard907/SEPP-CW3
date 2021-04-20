@@ -30,9 +30,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
         this.registered = false;
         this.idToFoodBox = new HashMap<>();
         this.idToOrder = new HashMap<>();
-        for (String id: showFoodBoxes("")) {
-            idToFoodBox.put(id, getFoodBoxById(id));
-        }
+//        for (String id: showFoodBoxes("")) {
+//            idToFoodBox.put(id, getFoodBoxById(id));
+//        }
     }
 
     @Override

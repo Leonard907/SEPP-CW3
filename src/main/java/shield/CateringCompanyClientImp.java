@@ -34,7 +34,14 @@ public class CateringCompanyClientImp implements CateringCompanyClient {
 
     @Override
     public boolean updateOrderStatus(int orderNumber, String status) {
-    return false;
+        String request = String.format("/updateOrderStatus?order_id=%s&newStatus=%s",
+                orderNumber, status);
+        try {
+            String response = ClientIO.doGETRequest(endpoint + request);
+            return Boolean.parseBoolean(response);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     @Override

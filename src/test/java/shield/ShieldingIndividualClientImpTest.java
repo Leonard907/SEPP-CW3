@@ -59,6 +59,8 @@ public class ShieldingIndividualClientImpTest {
 
     @Test
     public void testShowFoodBoxes() {
-        System.out.println(Boolean.parseBoolean("True"));
+        client.registerShieldingIndividual("1908031086");
+        client.pickFoodBox(1);
+        client.placeOrder();
     }
 }
