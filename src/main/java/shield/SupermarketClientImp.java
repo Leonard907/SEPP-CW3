@@ -22,7 +22,7 @@ public class SupermarketClientImp implements SupermarketClient {
 
         try {
             String response = ClientIO.doGETRequest(endpoint + request);
-            if (response.equals(Utilities.NEW_REGISTER_MESSAGE)) {
+            if (response.equals("registered new")) {
                 this.name = name;
                 this.postcode = postCode;
                 this.registered = true;

@@ -382,7 +382,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
         try {
             // get info from CHI
             int year = Integer.parseInt(CHI.substring(4,6));
-            if (year <= 21) {
+            if (year <= 212) {
                 year += 2000;
             } else {
                 year += 1900;
