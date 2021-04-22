@@ -12,17 +12,27 @@ import java.util.*;
 
 public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
 
-    /** Fields **/
+    /** The endpoint of the server **/
     private String endpoint;
+    /** whether the shielding individual is registered **/
     private boolean registered;
+    /** CHI number of the shielding individual **/
     private String CHI;
+    /** Postcode of the shielding individual's current location **/
     private String postcode;
+    /** Whether the shielding individual has ordered this week **/
     private boolean orderedThisWeek;
+    /** the id of the food box the shielding individual has picked **/
     private String pickedFoodBoxId;
+    /** all food boxes available (no dietary preference restricted) **/
     private List<FoodBox> allFoodBox;
+    /** A map that has each id of a food box to its corresponding food box object **/
     private Map<String, FoodBox> idToFoodBox;
+    /** the id of the current processing order **/
     private int currentOrderId;
+    /** A map that has each id of an order to its corresponding order object **/
     private Map<Integer, Order> idToOrder;
+    /** all orders the shielding individual has placed **/
     private List<Order> allOrders;
 
     public ShieldingIndividualClientImp(String endpoint) {
@@ -35,6 +45,13 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
 //        }
     }
 
+    /**
+     * registers a shielding individual based on the CHI number.
+     * @param CHI CHI number of the shielding individual
+     * @return A boolean value represents the success of the register action. Returns false
+     * when the CHI is invalid or the server throws an exception. Returns true if the
+     * register is successful or the CHI is already registered.
+     */
     @Override
     public boolean registerShieldingIndividual(String CHI) {
         if (CHI.length() != 10 || !validCHI(CHI)) {
@@ -56,6 +73,13 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
         return true;
     }
 
+    /**
+     * show food boxes for a particular dietary preference passed in as a parameter.
+     * @param dietaryPreference The dietary preference for the food box. if an empty string
+     *                          is used then show all available food boxes regardless of
+     *                          dietary preference
+     * @return a collection of the food box ids of the queried food boxes
+     */
     @Override
     public Collection<String> showFoodBoxes(String dietaryPreference) {
         String request = "/showFoodBox?orderOption=catering&dietaryPreference=" + dietaryPreference;
@@ -80,7 +104,12 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
         return foodBoxIds;
     }
 
-    // **UPDATE2** REMOVED PARAMETER
+    /**
+     * place an order. Checks preconditions whether the shielding individual is registered,
+     * whether an order has been placed this week and whether the shielding individual has picked
+     * a food box.
+     * @return a boolean value represents whether the order is successfully placed.
+     */
     @Override
     public boolean placeOrder() {
         assert isRegistered();
@@ -106,6 +135,11 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
         return true;
     }
 
+    /**
+     * edit an order based the order number. Checks the precondition that the order does exist.
+     * @param orderNumber the order number
+     * @return a boolean value represents the success of the editing action
+     */
     @Override
     public boolean editOrder(int orderNumber) {
         Order order = getOrderById(orderNumber);
@@ -124,6 +158,11 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
         return false;
     }
 
+    /**
+     * cancel an order based on the order number. Checks the precondition that the order does exist.
+     * @param orderNumber the order number
+     * @return a boolean value represents the success of the cancelling action
+     */
     @Override
     public boolean cancelOrder(int orderNumber) {
         Order order = getOrderById(orderNumber);
@@ -145,6 +184,12 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
         }
     }
 
+
+    /**
+     * request order status based on the order number. Checks the precondition that the order does exist.
+     * @param orderNumber the order number
+     * @return a boolean value represents the success of the requesting action
+     */
     @Override
     public boolean requestOrderStatus(int orderNumber) {
         Order order = getOrderById(orderNumber);
@@ -165,7 +210,10 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
         return true;
     }
 
-    // **UPDATE**
+    /**
+     * get all the catering companies.
+     * @return a collection of all the catering companies in String
+     */
     @Override
     public Collection<String> getCateringCompanies() {
         String request = "/getCaterers";
@@ -181,7 +229,12 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
         return allCateringCompanies;
     }
 
-    // **UPDATE**
+    /**
+     * get the distance between two postcodes.
+     * @param postCode1 post code of one location
+     * @param postCode2 post code of another location
+     * @return the distance between the locations in float
+     */
     @Override
     public float getDistance(String postCode1, String postCode2) {
         String request = String.format("/distance?postcode1=%s&postcode2=%s",
@@ -194,21 +247,39 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
         }
     }
 
+    /**
+     * check if the shielding individual is registered.
+     * @return a boolean value represents whether the shielding individual is registered
+     */
     @Override
     public boolean isRegistered() {
         return this.registered;
     }
 
+    /**
+     * get CHI number of the shielding individual.
+     * @return a String represents the CHI of the shielding individual
+     */
     @Override
     public String getCHI() {
         return this.CHI;
     }
 
+    /**
+     * get the total number of available food boxes.
+     * @return an integer represents the total number of available food boxes
+     */
     @Override
     public int getFoodBoxNumber() {
         return showFoodBoxes("").size();
     }
 
+    /**
+     * get the dietary preference of the food box based on the food box id.
+     * Checks the precondition that the food box exists.
+     * @param  foodBoxId the food box id as last returned from the server
+     * @return a String representing the dietary preference of the food box.
+     */
     @Override
     public String getDietaryPreferenceForFoodBox(int foodBoxId) {
         FoodBox foodBox = getFoodBoxById(Integer.toString(foodBoxId));
@@ -216,6 +287,12 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
         return foodBox.getDiet();
     }
 
+    /**
+     * get the number of items in the food box based on the food box id.
+     * Checks the precondition that the food box exists.
+     * @param  foodBoxId the food box id as last returned from the server
+     * @return an integer representing the total number of items in that food box.
+     */
     @Override
     public int getItemsNumberForFoodBox(int foodBoxId) {
         FoodBox foodBox = getFoodBoxById(Integer.toString(foodBoxId));
@@ -223,6 +300,12 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
         return foodBox.getContents().size();
     }
 
+    /**
+     * get the item ids of all the items in the food box based on the food box id.
+     * Checks the precondition that the food box exists.
+     * @param foodboxId the food box id to be queried
+     * @return a collection of all the item ids of all the items in the food box.
+     */
     @Override
     public Collection<Integer> getItemIdsForFoodBox(int foodboxId) {
         FoodBox foodBox = getFoodBoxById(Integer.toString(foodboxId));
@@ -234,6 +317,14 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
         return itemIds;
     }
 
+    /**
+     * get the item name for an item in the food box based on food box id and item id.
+     * Checks the precondition that the food box exists.
+     * @param  itemId the food box id as last returned from the server
+     * @param  foodBoxId the food box id as last returned from the server
+     * @return a String representing the item name. Return null if the item id
+     *         does not match any item.
+     */
     @Override
     public String getItemNameForFoodBox(int itemId, int foodBoxId) {
         FoodBox foodBox = getFoodBoxById(Integer.toString(foodBoxId));
@@ -246,6 +337,14 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
         return null;
     }
 
+    /**
+     * get the quantity for an item in the food box based on food box id and item id.
+     * Checks the precondition that the food box exists.
+     * @param  itemId the food box id as last returned from the server
+     * @param  foodBoxId the food box id as last returned from the server
+     * @return an integer representing the quantity of an item in the food box. Returns -1
+     *         if the item id match no item in the food box.
+     */
     @Override
     public int getItemQuantityForFoodBox(int itemId, int foodBoxId) {
         FoodBox foodBox = getFoodBoxById(Integer.toString(foodBoxId));
@@ -258,6 +357,11 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
         return -1;
     }
 
+    /**
+     * pick the food box specified by the food box id, set the field pickedFoodBoxId if success.
+     * @param  foodBoxId the food box id as last returned from the server
+     * @return whether the food box with the specified food box id is picked.
+     */
     @Override
     public boolean pickFoodBox(int foodBoxId) {
         Collection<String> foodBoxIds = showFoodBoxes("");
@@ -269,6 +373,13 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
         return false;
     }
 
+    /**
+     * change the item quantity in the picked food box based on the item id and the quantity.
+     * Checks the precondition that a food box has been picked
+     * @param  itemId the food box id as last returned from the server
+     * @param  quantity the food box item quantity to be set
+     * @return a boolean value represents whether the item quantity is changed.
+     */
     @Override
     public boolean changeItemQuantityForPickedFoodBox(int itemId, int quantity) {
         FoodBox foodBox = getFoodBoxById(pickedFoodBoxId);
@@ -282,6 +393,10 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
         return false;
     }
 
+    /**
+     * get the list of order numbers placed by the shielding individual.
+     * @return a collection of the order numbers placed by the shielding individual.
+     */
     @Override
     public Collection<Integer> getOrderNumbers() {
         List<Integer> orderNumbers = new ArrayList<>();
@@ -291,6 +406,12 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
         return orderNumbers;
     }
 
+    /**
+     * get the status of an order based on the order number. Checks the precondition
+     * that the order exists.
+     * @param orderNumber the order number
+     * @return an integer represents the status of the order
+     */
     @Override
     public String getStatusForOrder(int orderNumber) {
         Order order = getOrderById(orderNumber);
@@ -306,6 +427,12 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
         }
     }
 
+    /**
+     * get the list of item ids for the order based on the order number. Checks the precondition
+     * that the order exists.
+     * @param  orderNumber the order number
+     * @return a collection of the item ids for the order
+     */
     @Override
     public Collection<Integer> getItemIdsForOrder(int orderNumber) {
         Order order = getOrderById(orderNumber);
@@ -317,6 +444,14 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
         return itemIds;
     }
 
+    /**
+     * get the item name of an order based on the item id and the order number. Checks the precondition
+     * that the order exists.
+     * @param  itemId the food box id as last returned from the server
+     * @param  orderNumber the order number
+     * @return a String representing the item name for the item queried. Return null if the
+     *         item id match no item in the food box.
+     */
     @Override
     public String getItemNameForOrder(int itemId, int orderNumber) {
         Order order = getOrderById(orderNumber);
@@ -329,6 +464,14 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
         return null;
     }
 
+    /**
+     * get the item quantity of an item in the order specified by the item id and the order number.
+     * Checks the precondition that the food box exists.
+     * @param  itemId the food box id as last returned from the server
+     * @param  orderNumber the order number
+     * @return a boolean representing the item quantity of the order. Return -1 if the item id
+     *         match no item in the food box.
+     */
     @Override
     public int getItemQuantityForOrder(int itemId, int orderNumber) {
         Order order = getOrderById(orderNumber);
@@ -341,6 +484,15 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
         return -1;
     }
 
+    /**
+     * set the item quantity of the order based on the item id, the order number and the quantity.
+     * @param  itemId the food box id as last returned from the server
+     * @param  orderNumber the order number
+     * @param  quantity the food box item quantity to be set
+     * @return a boolean representing whether the item quantity for the item is set.
+     *         Returns false if the order does not exist or the item id does not match any
+     *         item in the food box.
+     */
     @Override
     public boolean setItemQuantityForOrder(int itemId, int orderNumber, int quantity) {
         Order order = getOrderById(orderNumber);
@@ -356,9 +508,11 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
         return false;
     }
 
-    // **UPDATE2** REMOVED METHOD getDeliveryTimeForOrder
-
-    // **UPDATE**
+    /**
+     * get the closest catering company to the current shielding individual.
+     * @return a String representing the closest catering company. Returns null
+     *         if such catering company does not exist.
+     */
     @Override
     public String getClosestCateringCompany() {
         Collection<String> allCateringCompanies = getCateringCompanies();
@@ -378,6 +532,12 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
         return curMinCateringCompany;
     }
 
+    /**
+     * method for checking whether the CHI is valid. A valid CHI should have string length 10 of
+     * all digits, with the first 6 in the format DD/MM/YY.
+     * @param CHI CHI number of the shielding individual
+     * @return a boolean value represents whether the CHI is valid or not.
+     */
     private boolean validCHI(String CHI) {
         try {
             // get info from CHI
@@ -400,6 +560,11 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
         return true;
     }
 
+    /**
+     * get the food box by its food box id.
+     * @param id the food box id
+     * @return the corresponding food box object. Returns null if the food box does not exist.
+     */
     private FoodBox getFoodBoxById(String id) {
         for (FoodBox foodBox: allFoodBox) {
             if (foodBox.getId().equals(id)) {
@@ -409,6 +574,11 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
         return null;
     }
 
+    /**
+     * get the order by its order id.
+     * @param id the order id
+     * @return the corresponding order object. Returns null if the order does not exist.
+     */
     private Order getOrderById(int id) {
         for (Order order: allOrders) {
             if (order.getId() == id) {
