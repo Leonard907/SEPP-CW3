@@ -34,6 +34,9 @@ public class CateringCompanyClientImp implements CateringCompanyClient {
 
     @Override
     public boolean updateOrderStatus(int orderNumber, String status) {
+        if (!isRegistered()) {
+            return false;
+        }
         String request = String.format("/updateOrderStatus?order_id=%s&newStatus=%s",
                 orderNumber, status);
         try {
@@ -60,6 +63,19 @@ public class CateringCompanyClientImp implements CateringCompanyClient {
     }
 
     private boolean validPostcode(String postcode) {
-        return false;
+        try {
+            String[] parts = postcode.split("_");
+            if (!parts[0].substring(0,2).equals("EH")) {
+                return false;
+            }
+            int num1 = Integer.parseInt(parts[0].substring(2));
+            if (num1 < 1 || num1 > 17) {
+                return false;
+            }
+            return Character.isDigit(parts[1].charAt(0)) && Character.isUpperCase(parts[1].charAt(1))
+                    && Character.isUpperCase(parts[1].charAt(2));
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

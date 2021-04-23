@@ -7,7 +7,7 @@ package shield;
 
 public class Main {
   public static void main(String[] args) {
-    System.out.println("running!");
+    System.out.println("running!".equals(null));
     return;
   }
 }

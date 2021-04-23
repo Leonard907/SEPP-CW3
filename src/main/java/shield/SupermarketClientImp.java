@@ -18,7 +18,7 @@ public class SupermarketClientImp implements SupermarketClient {
 
     @Override
     public boolean registerSupermarket(String name, String postCode) {
-        String request = String.format("registerSupermarket?business_name=%s&postcode=%s", name, postCode);
+        String request = String.format("/registerSupermarket?business_name=%s&postcode=%s", name, postCode);
 
         try {
             String response = ClientIO.doGETRequest(endpoint + request);
@@ -51,6 +51,9 @@ public class SupermarketClientImp implements SupermarketClient {
     // **UPDATE**
     @Override
     public boolean updateOrderStatus(int orderNumber, String status) {
+        if (!isRegistered()) {
+            return false;
+        }
         String request = String.format("/updateSupermarketOrderStatus?order_id=%s&newStatus=%s",
                 orderNumber, status);
         try {
@@ -74,5 +77,22 @@ public class SupermarketClientImp implements SupermarketClient {
     @Override
     public String getPostCode() {
         return this.postcode;
+    }
+
+    private boolean validPostcode(String postcode) {
+        try {
+            String[] parts = postcode.split("_");
+            if (!parts[0].substring(0,2).equals("EH")) {
+                return false;
+            }
+            int num1 = Integer.parseInt(parts[0].substring(2));
+            if (num1 < 1 || num1 > 17) {
+                return false;
+            }
+            return Character.isDigit(parts[1].charAt(0)) && Character.isUpperCase(parts[1].charAt(1))
+                    && Character.isUpperCase(parts[1].charAt(2));
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

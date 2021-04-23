@@ -40,9 +40,11 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
         this.registered = false;
         this.idToFoodBox = new HashMap<>();
         this.idToOrder = new HashMap<>();
-//        for (String id: showFoodBoxes("")) {
-//            idToFoodBox.put(id, getFoodBoxById(id));
-//        }
+        this.allOrders = new ArrayList<>();
+        this.allFoodBox = new ArrayList<>();
+        for (String id: showFoodBoxes("")) {
+            idToFoodBox.put(id, getFoodBoxById(id));
+        }
     }
 
     /**
@@ -107,14 +109,15 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     /**
      * place an order. Checks preconditions whether the shielding individual is registered,
      * whether an order has been placed this week and whether the shielding individual has picked
-     * a food box.
+     * a valid food box.
      * @return a boolean value represents whether the order is successfully placed.
      */
     @Override
     public boolean placeOrder() {
-        assert isRegistered();
-        assert !orderedThisWeek;
-        assert pickedFoodBoxId != null;
+        if (!isRegistered() || orderedThisWeek || pickedFoodBoxId == null) {
+            return false;
+        }
+        showFoodBoxes(""); // Update the list of the food boxes
         String closestCateringCompany = getClosestCateringCompany();
         String providerName = closestCateringCompany.split(",")[1];
         String providerPostcode = closestCateringCompany.split(",")[2];
@@ -175,6 +178,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
             boolean cancelled = Boolean.parseBoolean(response);
             if (cancelled) {
                 order.setStatus(4);
+                this.orderedThisWeek = false;
                 return true;
             } else {
                 return false;
@@ -385,7 +389,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
         FoodBox foodBox = getFoodBoxById(pickedFoodBoxId);
         assert foodBox != null;
         for (Product product: foodBox.getContents()) {
-            if (product.getId() == itemId) {
+            if (product.getId() == itemId && product.getQuantity() > quantity) {
                 product.setQuantity(quantity);
                 return true;
             }
@@ -539,10 +543,15 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
      * @return a boolean value represents whether the CHI is valid or not.
      */
     private boolean validCHI(String CHI) {
+        for (char c: CHI.toCharArray()) {
+            if (!Character.isDigit(c)) {
+                return false;
+            }
+        }
         try {
             // get info from CHI
             int year = Integer.parseInt(CHI.substring(4,6));
-            if (year <= 212) {
+            if (year <= 21) {
                 year += 2000;
             } else {
                 year += 1900;
@@ -586,5 +595,20 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
             }
         }
         return null;
+    }
+
+    /**
+     * getter method for the field currentOrderId.
+     * @return an integer representing the value of the field currentOrderId
+     */
+    public int getCurrentOrderId() {
+        return currentOrderId;
+    }
+
+    /**
+     * setter method for the field orderedThisWeek.
+     */
+    public void setOrderedThisWeek(boolean orderedThisWeek) {
+        this.orderedThisWeek = orderedThisWeek;
     }
 }

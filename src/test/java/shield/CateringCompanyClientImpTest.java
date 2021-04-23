@@ -26,35 +26,34 @@ public class CateringCompanyClientImpTest {
   private CateringCompanyClient client;
 
   private Properties loadProperties(String propsFilename) {
-    ClassLoader loader = Thread.currentThread().getContextClassLoader();
-    Properties props = new Properties();
+     ClassLoader loader = Thread.currentThread().getContextClassLoader();
+     Properties props = new Properties();
 
-    try {
-      InputStream propsStream = loader.getResourceAsStream(propsFilename);
-      props.load(propsStream);
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
+     try {
+       InputStream propsStream = loader.getResourceAsStream(propsFilename);
+       props.load(propsStream);
+      } catch (Exception e) {
+       e.printStackTrace();
+      }
 
-    return props;
-  }
+     return props;
+   }
 
-  @BeforeEach
-  public void setup() {
-    clientProps = loadProperties(clientPropsFilename);
+   @BeforeEach
+   public void setup() {
+     clientProps = loadProperties(clientPropsFilename);
+     client = new CateringCompanyClientImp(clientProps.getProperty("endpoint"));
+   }
 
-    client = new CateringCompanyClientImp(clientProps.getProperty("endpoint"));
-  }
 
+   @Test
+   public void testCateringCompanyNewRegistration() {
+     Random rand = new Random();
+     String name = String.valueOf(rand.nextInt(10000));
+     String postCode = String.valueOf(rand.nextInt(10000));
 
-  @Test
-  public void testCateringCompanyNewRegistration() {
-    Random rand = new Random();
-    String name = String.valueOf(rand.nextInt(10000));
-    String postCode = String.valueOf(rand.nextInt(10000));
-
-    assertTrue(client.registerCateringCompany(name, postCode));
-    assertTrue(client.isRegistered());
-    assertEquals(client.getName(), name);
-  }
+     assertTrue(client.registerCateringCompany(name, postCode));
+     assertTrue(client.isRegistered());
+     assertEquals(client.getName(), name);
+   }
 }
