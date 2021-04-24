@@ -17,6 +17,9 @@ public class CateringCompanyClientImp implements CateringCompanyClient {
 
     @Override
     public boolean registerCateringCompany(String name, String postCode) {
+        if (!validPostcode(postCode)) {
+            return false;
+        }
         String request = String.format("/registerCateringCompany?business_name=%s&postcode=%s", name, postCode);
 
         try {
@@ -77,5 +80,13 @@ public class CateringCompanyClientImp implements CateringCompanyClient {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    /**
+     * setter method for field registered.
+     * @param registered Boolean value for field registered.
+     */
+    public void setRegistered(boolean registered) {
+        this.registered = registered;
     }
 }

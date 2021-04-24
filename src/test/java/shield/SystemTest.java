@@ -1,13 +1,10 @@
 package shield;
 
+import com.google.gson.Gson;
 import org.junit.jupiter.api.*;
 
 import java.io.InputStream;
-import java.lang.reflect.Method;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.Properties;
-import java.util.Random;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -99,9 +96,28 @@ public class SystemTest {
         // test placeOrder before registers
         assertFalse(client.placeOrder());
 
+        // check food boxes read correctly
+        assertEquals(client.getFoodBoxNumber(), 5);
+        // check dietary preference
+        assertEquals(client.getDietaryPreferenceForFoodBox(1), "none");
+        assertEquals(client.getDietaryPreferenceForFoodBox(2), "pollotarian");
+        assertEquals(client.getDietaryPreferenceForFoodBox(3), "none");
+        assertEquals(client.getDietaryPreferenceForFoodBox(4), "none");
+        assertEquals(client.getDietaryPreferenceForFoodBox(5), "vegan");
+        // check number of items in food box
+        assertEquals(client.getItemsNumberForFoodBox(1), 3);
+        assertEquals(client.getItemsNumberForFoodBox(2), 3);
+        assertEquals(client.getItemsNumberForFoodBox(3), 3);
+        assertEquals(client.getItemsNumberForFoodBox(4), 4);
+        assertEquals(client.getItemsNumberForFoodBox(5), 3);
+
         // register ShieldingIndividual
         String chi = generateRandomValidCHI();
-        client.registerShieldingIndividual(chi);
+        assertTrue(client.registerShieldingIndividual(chi));
+        // register catering company
+        String name = generateRandomName();
+        String postCode = generateRandomValidPostcode();
+        assertTrue(clientCateringCompany.registerCateringCompany(name, postCode));
 
         // test placeOrder before pick food box
         assertFalse(client.placeOrder());
@@ -112,6 +128,13 @@ public class SystemTest {
 
         // test placeOrder after placed one this week
         assertFalse(client.placeOrder());
+
+        // place order while editing its contents
+        client.setOrderedThisWeek(false);
+        assertTrue(client.changeItemQuantityForPickedFoodBox(2, 1));
+        assertTrue(client.placeOrder());
+        int orderId = client.getCurrentOrderId();
+        assertEquals(client.getItemQuantityForOrder(2, orderId), 1);
     }
 
     @Test
@@ -147,6 +170,7 @@ public class SystemTest {
         // test normal cancelOrder process
         order_id = client.getCurrentOrderId();
         assertTrue(client.cancelOrder(order_id));
+        assertEquals(client.getStatusForOrder(order_id), "cancelled");
     }
 
     @Test
@@ -155,6 +179,10 @@ public class SystemTest {
         String chi = generateRandomValidCHI();
         assertTrue(client.registerShieldingIndividual(chi));
         assertEquals(client.getCHI(), chi);
+        // register catering company
+        String name = generateRandomName();
+        String postCode = generateRandomValidPostcode();
+        clientCateringCompany.registerCateringCompany(name, postCode);
 
         // place order
         assertTrue(client.pickFoodBox(1));
@@ -165,11 +193,6 @@ public class SystemTest {
 
         // change quantity
         assertTrue(client.changeItemQuantityForPickedFoodBox(2, 1));
-
-        // register catering company
-        String name = generateRandomName();
-        String postCode = generateRandomValidPostcode();
-        assertTrue(clientCateringCompany.registerCateringCompany(name, postCode));
 
         // test editOrder when already packed, dispatched or delivered
         int orderId = client.getCurrentOrderId();
@@ -198,6 +221,10 @@ public class SystemTest {
         String chi = generateRandomValidCHI();
         assertTrue(client.registerShieldingIndividual(chi));
         assertEquals(client.getCHI(), chi);
+        // register catering company
+        String name = generateRandomName();
+        String postCode = generateRandomValidPostcode();
+        clientCateringCompany.registerCateringCompany(name, postCode);
 
         // place order
         assertTrue(client.pickFoodBox(1));
@@ -206,6 +233,7 @@ public class SystemTest {
         // test requestOrderStatus
         int orderId = client.getCurrentOrderId();
         assertTrue(client.requestOrderStatus(orderId));
+        assertEquals(client.getStatusForOrder(orderId), "placed");
     }
 
     @Test
@@ -214,6 +242,10 @@ public class SystemTest {
         String chi = generateRandomValidCHI();
         assertTrue(client.registerShieldingIndividual(chi));
         assertEquals(client.getCHI(), chi);
+        // register catering company
+        String name = generateRandomName();
+        String postcode = generateRandomValidPostcode();
+        clientCateringCompany.registerCateringCompany(name, postcode);
 
         // place order
         assertTrue(client.pickFoodBox(1));
@@ -223,8 +255,8 @@ public class SystemTest {
         int orderId = client.getCurrentOrderId();
 
         // register supermarket
-        String name = generateRandomName();
-        String postcode = generateRandomValidPostcode();
+        name = generateRandomName();
+        postcode = generateRandomValidPostcode();
         assertTrue(clientSupermarket.registerSupermarket(name, postcode));
 
         // record order
@@ -232,7 +264,7 @@ public class SystemTest {
 
         // test if the order status is wrong
         assertFalse(clientSupermarket.updateOrderStatus(orderId,"deli"));
-        //test if the order status is packed/dispatched/delivered
+        // test if the order status is packed/dispatched/delivered
         assertTrue(clientSupermarket.updateOrderStatus(orderId,"packed"));
         assertTrue(clientSupermarket.updateOrderStatus(orderId,"dispatched"));
         assertTrue(clientSupermarket.updateOrderStatus(orderId,"delivered"));
@@ -243,6 +275,10 @@ public class SystemTest {
         // register ShieldingIndividual
         String chi = generateRandomValidCHI();
         client.registerShieldingIndividual(chi);
+        // register catering company
+        String name = generateRandomName();
+        String postcode = generateRandomValidPostcode();
+        assertTrue(clientCateringCompany.registerCateringCompany(name, postcode));
 
         // place order
         assertTrue(client.pickFoodBox(1));
@@ -250,10 +286,6 @@ public class SystemTest {
 
         // get order id
         int orderId = client.getCurrentOrderId();
-        // register catering company
-        String name = generateRandomName();
-        String postcode = generateRandomValidPostcode();
-        assertTrue(clientCateringCompany.registerCateringCompany(name, postcode));
 
         // test if the order status is wrong
         assertFalse(clientCateringCompany.updateOrderStatus(orderId,"deli"));
@@ -261,6 +293,9 @@ public class SystemTest {
         assertTrue(clientCateringCompany.updateOrderStatus(orderId,"packed"));
         assertTrue(clientCateringCompany.updateOrderStatus(orderId,"dispatched"));
         assertTrue(clientCateringCompany.updateOrderStatus(orderId,"delivered"));
+        // test if the shielding individual can get the updated order status
+        assertTrue(client.requestOrderStatus(orderId));
+        assertEquals(client.getStatusForOrder(orderId), "delivered");
     }
 
     private String generateRandomValidCHI() {

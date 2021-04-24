@@ -9,6 +9,14 @@ public class FoodBox {
     private String id;
     private String name;
 
+    public FoodBox(List<Product> contents, String delivered_by, String diet, String id, String name) {
+        this.contents = contents;
+        this.delivered_by = delivered_by;
+        this.diet = diet;
+        this.id = id;
+        this.name = name;
+    }
+
     public String getId() {
         return id;
     }

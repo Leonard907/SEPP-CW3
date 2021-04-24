@@ -6,9 +6,13 @@ package shield;
 
 public class SupermarketClientImp implements SupermarketClient {
 
+    /** endpoint of the server **/
     private String endpoint;
+    /** register status **/
     private boolean registered;
+    /** name of the supermarket **/
     private String name;
+    /** postcode of the supermarket **/
     private String postcode;
 
     public SupermarketClientImp(String endpoint) {
@@ -16,8 +20,17 @@ public class SupermarketClientImp implements SupermarketClient {
         this.registered = false;
     }
 
+    /**
+     * registers a supermarket given name and postcode. Checks postcode is valid.
+     * @param name name of the business
+     * @param postCode postcode of the supermarket
+     * @return boolean value represents the success of the registration
+     */
     @Override
     public boolean registerSupermarket(String name, String postCode) {
+        if (!validPostcode(postCode)) {
+            return false;
+        }
         String request = String.format("/registerSupermarket?business_name=%s&postcode=%s", name, postCode);
 
         try {
@@ -33,7 +46,12 @@ public class SupermarketClientImp implements SupermarketClient {
         return true;
     }
 
-    // **UPDATE2** ADDED METHOD
+    /**
+     * record an order to the supermarket given a CHI and an order number. 
+     * @param CHI CHI number of the shiedling individual associated with this order
+     * @param orderNumber the order number
+     * @return
+     */
     @Override
     public boolean recordSupermarketOrder(String CHI, int orderNumber) {
         String request = String.format(
@@ -94,5 +112,13 @@ public class SupermarketClientImp implements SupermarketClient {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    /**
+     * setter method for field registered
+     * @param registered Boolean value for field registered.
+     */
+    public void setRegistered(boolean registered) {
+        this.registered = registered;
     }
 }

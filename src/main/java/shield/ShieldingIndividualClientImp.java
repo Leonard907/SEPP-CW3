@@ -26,25 +26,17 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     private String pickedFoodBoxId;
     /** all food boxes available (no dietary preference restricted) **/
     private List<FoodBox> allFoodBox;
-    /** A map that has each id of a food box to its corresponding food box object **/
-    private Map<String, FoodBox> idToFoodBox;
     /** the id of the current processing order **/
     private int currentOrderId;
-    /** A map that has each id of an order to its corresponding order object **/
-    private Map<Integer, Order> idToOrder;
     /** all orders the shielding individual has placed **/
     private List<Order> allOrders;
 
     public ShieldingIndividualClientImp(String endpoint) {
         this.endpoint = endpoint;
         this.registered = false;
-        this.idToFoodBox = new HashMap<>();
-        this.idToOrder = new HashMap<>();
         this.allOrders = new ArrayList<>();
         this.allFoodBox = new ArrayList<>();
-        for (String id: showFoodBoxes("")) {
-            idToFoodBox.put(id, getFoodBoxById(id));
-        }
+        showFoodBoxes(""); // cache all food boxes
     }
 
     /**
@@ -108,8 +100,8 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
 
     /**
      * place an order. Checks preconditions whether the shielding individual is registered,
-     * whether an order has been placed this week and whether the shielding individual has picked
-     * a valid food box.
+     * whether an order has been placed this week, whether the shielding individual has picked
+     * a valid food box and whether there exists a closest catering company.
      * @return a boolean value represents whether the order is successfully placed.
      */
     @Override
@@ -117,8 +109,10 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
         if (!isRegistered() || orderedThisWeek || pickedFoodBoxId == null) {
             return false;
         }
-        showFoodBoxes(""); // Update the list of the food boxes
         String closestCateringCompany = getClosestCateringCompany();
+        if (closestCateringCompany == null) {
+            return false;
+        }
         String providerName = closestCateringCompany.split(",")[1];
         String providerPostcode = closestCateringCompany.split(",")[2];
         String request = String.format("/placeOrder?individual_id=%s&catering_business_name=%s" +
@@ -130,7 +124,6 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
             this.currentOrderId = Integer.parseInt(response);
             Order newOrder = new Order(currentOrderId, 0, pickedFoodBox);
             this.allOrders.add(newOrder);
-            this.idToOrder.put(currentOrderId, newOrder);
             this.orderedThisWeek = true;
         } catch (Exception e) {
             return false;
@@ -146,7 +139,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     @Override
     public boolean editOrder(int orderNumber) {
         Order order = getOrderById(orderNumber);
-        if (order != null) {
+        if (order != null && order.getStatus() < 1) {
             if (requestOrderStatus(orderNumber) && order.getStatus() < 1) {
                 String request = "/editOrder?order_id=" + orderNumber;
                 String data = new Gson().toJson(order.getFoodBox());
@@ -169,7 +162,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     @Override
     public boolean cancelOrder(int orderNumber) {
         Order order = getOrderById(orderNumber);
-        if (order == null) {
+        if (order == null || order.getStatus() >= 2) {
             return false;
         }
         String request = "/cancelOrder?order_id=" + orderNumber;
@@ -287,7 +280,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     @Override
     public String getDietaryPreferenceForFoodBox(int foodBoxId) {
         FoodBox foodBox = getFoodBoxById(Integer.toString(foodBoxId));
-        assert foodBox != null;
+        if (foodBox == null) {
+            return null;
+        }
         return foodBox.getDiet();
     }
 
@@ -300,7 +295,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     @Override
     public int getItemsNumberForFoodBox(int foodBoxId) {
         FoodBox foodBox = getFoodBoxById(Integer.toString(foodBoxId));
-        assert foodBox != null;
+        if (foodBox == null) {
+            return -1;
+        }
         return foodBox.getContents().size();
     }
 
@@ -313,7 +310,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     @Override
     public Collection<Integer> getItemIdsForFoodBox(int foodboxId) {
         FoodBox foodBox = getFoodBoxById(Integer.toString(foodboxId));
-        assert foodBox != null;
+        if (foodBox == null) {
+            return null;
+        }
         List<Integer> itemIds = new ArrayList<>();
         for (Product product: foodBox.getContents()) {
             itemIds.add(product.getId());
@@ -332,7 +331,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     @Override
     public String getItemNameForFoodBox(int itemId, int foodBoxId) {
         FoodBox foodBox = getFoodBoxById(Integer.toString(foodBoxId));
-        assert foodBox != null;
+        if (foodBox == null) {
+            return null;
+        }
         for (Product product: foodBox.getContents()) {
             if (product.getId() == itemId) {
                 return product.getName();
@@ -352,7 +353,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     @Override
     public int getItemQuantityForFoodBox(int itemId, int foodBoxId) {
         FoodBox foodBox = getFoodBoxById(Integer.toString(foodBoxId));
-        assert foodBox != null;
+        if (foodBox == null) {
+            return -1;
+        }
         for (Product product: foodBox.getContents()) {
             if (product.getId() == itemId) {
                 return product.getQuantity();
@@ -368,6 +371,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
      */
     @Override
     public boolean pickFoodBox(int foodBoxId) {
+        showFoodBoxes(""); // get original food box information
         Collection<String> foodBoxIds = showFoodBoxes("");
         String idString = Integer.toString(foodBoxId);
         if (foodBoxIds.contains(idString)) {
@@ -387,9 +391,12 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     @Override
     public boolean changeItemQuantityForPickedFoodBox(int itemId, int quantity) {
         FoodBox foodBox = getFoodBoxById(pickedFoodBoxId);
-        assert foodBox != null;
+        if (foodBox == null) {
+            return false;
+        }
         for (Product product: foodBox.getContents()) {
-            if (product.getId() == itemId && product.getQuantity() > quantity) {
+            if (product.getId() == itemId &&
+                    getItemQuantityForFoodBox(itemId, Integer.parseInt(pickedFoodBoxId)) > quantity) {
                 product.setQuantity(quantity);
                 return true;
             }
@@ -419,13 +426,17 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     @Override
     public String getStatusForOrder(int orderNumber) {
         Order order = getOrderById(orderNumber);
-        assert order != null;
+        if (order == null) {
+            return null;
+        }
         if (order.getStatus() == 0) {
             return "placed";
         } else if (order.getStatus() == 1) {
             return "packed";
         } else if (order.getStatus() == 2) {
             return "dispatched";
+        } else if (order.getStatus() == 3) {
+            return "delivered";
         } else {
             return "cancelled";
         }
@@ -440,7 +451,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     @Override
     public Collection<Integer> getItemIdsForOrder(int orderNumber) {
         Order order = getOrderById(orderNumber);
-        assert order != null;
+        if (order == null) {
+            return null;
+        }
         List<Integer> itemIds = new ArrayList<>();
         for (Product product: order.getFoodBox().getContents()) {
             itemIds.add(product.getId());
@@ -459,7 +472,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     @Override
     public String getItemNameForOrder(int itemId, int orderNumber) {
         Order order = getOrderById(orderNumber);
-        assert order != null;
+        if (order == null) {
+            return null;
+        }
         for (Product product: order.getFoodBox().getContents()) {
             if (product.getId() == itemId) {
                 return product.getName();
@@ -479,7 +494,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     @Override
     public int getItemQuantityForOrder(int itemId, int orderNumber) {
         Order order = getOrderById(orderNumber);
-        assert order != null;
+        if (order == null) {
+            return -1;
+        }
         for (Product product: order.getFoodBox().getContents()) {
             if (product.getId() == itemId) {
                 return product.getQuantity();
@@ -574,7 +591,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
      * @param id the food box id
      * @return the corresponding food box object. Returns null if the food box does not exist.
      */
-    private FoodBox getFoodBoxById(String id) {
+    public FoodBox getFoodBoxById(String id) {
         for (FoodBox foodBox: allFoodBox) {
             if (foodBox.getId().equals(id)) {
                 return foodBox;
@@ -607,8 +624,65 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
 
     /**
      * setter method for the field orderedThisWeek.
+     * @param orderedThisWeek whether the shielding individual placed an order this week
      */
     public void setOrderedThisWeek(boolean orderedThisWeek) {
         this.orderedThisWeek = orderedThisWeek;
+    }
+
+    /**
+     * setter method for the field CHI.
+     * @param CHI CHI number
+     */
+    public void setCHI(String CHI) {
+        this.CHI = CHI;
+    }
+
+    /**
+     * setter method for the field registered
+     * @param registered whether the shielding individual is registered
+     */
+    public void setRegistered(boolean registered) {
+        this.registered = registered;
+    }
+
+    /**
+     * setter method for the field postcode
+     * @param postcode postcode of the shielding individual's location
+     */
+    public void setPostcode(String postcode) {
+        this.postcode = postcode;
+    }
+
+    /**
+     * setter method for the field pickedFoodBoxId.
+     * @param pickedFoodBoxId the id of the picked food box
+     */
+    public void setPickedFoodBoxId(String pickedFoodBoxId) {
+        this.pickedFoodBoxId = pickedFoodBoxId;
+    }
+
+    /**
+     * setter method for the field currentOrderId.
+     * @param currentOrderId the id of the current processing order
+     */
+    public void setCurrentOrderId(int currentOrderId) {
+        this.currentOrderId = currentOrderId;
+    }
+
+    /**
+     * setter method for the field allOrders.
+     * @param allOrders the list of all orders
+     */
+    public void setAllOrders(List<Order> allOrders) {
+        this.allOrders = allOrders;
+    }
+
+    /**
+     * getter method for the field pickedFoodBoxId.
+     * @return value of the field pickedFoodBoxId.
+     */
+    public String getPickedFoodBoxId() {
+        return pickedFoodBoxId;
     }
 }
